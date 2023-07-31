@@ -1,5 +1,6 @@
 #pragma once
 
+#include <unordered_map>
 #include <functional>
 #include <algorithm>
 #include <optional>
@@ -7,8 +8,6 @@
 #include <cstring>
 #include <string>
 #include <vector>
-#include <unordered_map>
-#include <array>
 
 namespace FlashKV
 {
