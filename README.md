@@ -64,7 +64,7 @@ int main()
     else if (loadStatus == 1)
         std::cout << "No FlashKV Store Found. A New One Will Be Created Upon Saving" << std::endl;
     else
-        std::cout << "Error occurred while loading the FlashKV Store" << std::endl;
+        std::cout << "Error Occurred While Loading The FlashKV Store" << std::endl;
 
     // Try To Read A Value From The Store
     std::string key = "test";
