@@ -35,10 +35,10 @@ namespace FlashKV
         if (signature == FLASHKV_SIGNATURE)
         {
             // The Flash memory contains a valid FlashKV Store
+            // TODO: Read the store from Flash memory.
+
             _storeLoaded = true;
             return 0;
-
-            // TODO: Read the store from Flash memory.
         }
         else
         {
@@ -46,7 +46,7 @@ namespace FlashKV
             if (!_flashEraseFunc(_flashAddress, _flashSize))
             {
                 _storeLoaded = false;
-                return 2;
+                return -1;
             }
 
             // Write the signature to the first page of Flash memory.
@@ -55,13 +55,13 @@ namespace FlashKV
             if (!_flashWriteFunc(_flashAddress, buffer.data(), _flashPageSize))
             {
                 _storeLoaded = false;
-                return 2;
+                return -1;
             }
 
             _storeLoaded = true;
             return 1;
         }
-        return 2;
+        return -1;
     }
 
     bool FlashKV::saveStore()
@@ -74,7 +74,33 @@ namespace FlashKV
         if (!_flashEraseFunc(_flashAddress, _flashSize))
             return false;
 
-        // TODO: Write the store to Flash memory.
+        // Create a buffer to hold the serialized store.
+        std::vector<uint8_t> buffer;
+
+        // Add the signature to the buffer
+        buffer.insert(buffer.end(), FLASHKV_SIGNATURE.begin(), FLASHKV_SIGNATURE.end());
+
+        // Add each key-value pair to the buffer.
+        for (const auto &kv : _keyValueStore)
+        {
+            // Serialize the key
+            size_t keySize = kv.first.size();
+            buffer.insert(buffer.end(), reinterpret_cast<uint8_t *>(&keySize), reinterpret_cast<uint8_t *>(&keySize) + sizeof(size_t));
+            buffer.insert(buffer.end(), kv.first.begin(), kv.first.end());
+
+            // Serialize the value
+            size_t valueSize = kv.second.size();
+            buffer.insert(buffer.end(), reinterpret_cast<uint8_t *>(&valueSize), reinterpret_cast<uint8_t *>(&valueSize) + sizeof(size_t));
+            buffer.insert(buffer.end(), kv.second.begin(), kv.second.end());
+        }
+
+        // Pad the buffer with zeros to make it a multiple of the page size
+        while (buffer.size() % _flashPageSize != 0)
+            buffer.push_back(0);
+
+        // Write the buffer to Flash memory
+        if (!_flashWriteFunc(_flashAddress, buffer.data(), buffer.size()))
+            return false;
 
         return true;
     }
@@ -105,8 +131,7 @@ namespace FlashKV
         if (!_storeLoaded)
             return false;
 
-        size_t erased = _keyValueStore.erase(key);
-        return erased > 0;
+        return _keyValueStore.erase(key) > 0;
     }
 
 } // namespace FlashKV
