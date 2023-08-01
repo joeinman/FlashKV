@@ -2,19 +2,15 @@
 
 #include <unordered_map>
 #include <functional>
-#include <algorithm>
 #include <optional>
-#include <cstdint>
-#include <cstring>
 #include <string>
 #include <vector>
-#include <array>
 
 namespace FlashKV
 {
     // FlashKV Signature
-    const std::array<uint8_t, 4> FLASHKV_SIGNATURE = {'F', 'K', 'V', 'S'};
-    const uint8_t FLASHKV_SIGNATURE_SIZE = FLASHKV_SIGNATURE.size();
+    const uint8_t FLASHKV_SIGNATURE[4] = {'F', 'K', 'V', 'S'};
+    const uint8_t FLASHKV_SIGNATURE_SIZE = sizeof(FLASHKV_SIGNATURE);
 
     // Function Types For Flash Access
     using FlashWriteFunc = std::function<bool(uint32_t flashAddress, const uint8_t *data, size_t count)>;

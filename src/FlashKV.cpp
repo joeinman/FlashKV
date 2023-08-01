@@ -27,12 +27,12 @@ namespace FlashKV
     int FlashKV::loadStore()
     {
         // Attempt To Read The Signature From Flash
-        std::array<uint8_t, FLASHKV_SIGNATURE_SIZE> signature;
-        if (!_flashReadFunc(_flashAddress, signature.data(), FLASHKV_SIGNATURE_SIZE))
+        uint8_t signature[FLASHKV_SIGNATURE_SIZE];
+        if (!_flashReadFunc(_flashAddress, signature, FLASHKV_SIGNATURE_SIZE))
             return -1;
 
         // Check If The Signature Is Valid
-        if (signature == FLASHKV_SIGNATURE)
+        if (std::memcmp(signature, FLASHKV_SIGNATURE, FLASHKV_SIGNATURE_SIZE) == 0)
         {
             // Flash Contains A Valid FlashKV Store.
             size_t offset = FLASHKV_SIGNATURE_SIZE;
@@ -95,7 +95,7 @@ namespace FlashKV
         std::vector<uint8_t> buffer;
 
         // Add Signature To The Buffer
-        buffer.insert(buffer.end(), FLASHKV_SIGNATURE.begin(), FLASHKV_SIGNATURE.end());
+        buffer.insert(buffer.end(), std::begin(FLASHKV_SIGNATURE), std::end(FLASHKV_SIGNATURE));
 
         // Add Each Key-Value Pair To The Buffer
         for (const auto &kv : _keyValueStore)
