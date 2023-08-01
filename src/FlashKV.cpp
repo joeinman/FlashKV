@@ -26,54 +26,55 @@ namespace FlashKV
 
     int FlashKV::loadStore()
     {
-        // Read the first few bytes from Flash memory.
-        std::array<uint8_t, SIGNATURE_SIZE> signature;
-        if (!_flashReadFunc(_flashAddress, signature.data(), SIGNATURE_SIZE))
+        // Attempt To Read The Signature From Flash
+        std::array<uint8_t, FLASHKV_SIGNATURE_SIZE> signature;
+        if (!_flashReadFunc(_flashAddress, signature.data(), FLASHKV_SIGNATURE_SIZE))
             return false;
 
-        // Check if the signature matches.
+        // Check If The Signature Is Valid
         if (signature == FLASHKV_SIGNATURE)
         {
-            size_t offset = SIGNATURE_SIZE;
+            // Flash Contains A Valid FlashKV Store.
+            size_t offset = FLASHKV_SIGNATURE_SIZE;
             while (1)
             {
-                // Read the size of the key.
+                // Read The Size Of The Key
                 uint16_t keySize;
                 _flashReadFunc(_flashAddress + offset, reinterpret_cast<uint8_t *>(&keySize), sizeof(uint16_t));
                 offset += sizeof(uint16_t);
 
-                // If the key size is 0, we've reached the end of the store.
+                // If The Key Size Is 0, We Have Reached The End Of The Store
                 if (keySize == 0)
                     break;
 
-                // Read the key.
+                // Read The Key
                 std::string key;
                 key.resize(keySize);
                 _flashReadFunc(_flashAddress + offset, reinterpret_cast<uint8_t *>(&key[0]), keySize);
                 offset += keySize;
 
-                // Read the size of the value.
+                // Read The Size Of The Value
                 uint16_t valueSize;
                 _flashReadFunc(_flashAddress + offset, reinterpret_cast<uint8_t *>(&valueSize), sizeof(uint16_t));
                 offset += sizeof(uint16_t);
 
-                // Read the value.
+                // Read The Value
                 std::vector<uint8_t> value;
                 value.resize(valueSize);
                 _flashReadFunc(_flashAddress + offset, reinterpret_cast<uint8_t *>(&value[0]), valueSize);
                 offset += valueSize;
 
-                // Add the key-value pair to the store.
+                // Add Key-Value Pair To The Store
                 _keyValueStore[key] = value;
             }
 
-            // Load was successful.
+            // Load Was Successful
             _storeLoaded = true;
             return 0;
         }
         else
         {
-            // The Flash memory does not contain a valid FlashKV Store.
+            // Flash Doesn't Contain A Valid FlashKV Store
             _storeLoaded = true;
             return 1;
         }
@@ -90,31 +91,31 @@ namespace FlashKV
         if (!_flashEraseFunc(_flashAddress, _flashSize))
             return false;
 
-        // Create a buffer to hold the serialized store.
+        // Create A Buffer To Hold The Entire Store
         std::vector<uint8_t> buffer;
 
-        // Add the signature to the buffer
+        // Add Signature To The Buffer
         buffer.insert(buffer.end(), FLASHKV_SIGNATURE.begin(), FLASHKV_SIGNATURE.end());
 
-        // Add each key-value pair to the buffer.
+        // Add Each Key-Value Pair To The Buffer
         for (const auto &kv : _keyValueStore)
         {
-            // Serialize the key
+            // Serialize The Key
             uint16_t keySize = kv.first.size();
             buffer.insert(buffer.end(), reinterpret_cast<uint8_t *>(&keySize), reinterpret_cast<uint8_t *>(&keySize) + sizeof(uint16_t));
             buffer.insert(buffer.end(), kv.first.begin(), kv.first.end());
 
-            // Serialize the value
+            // Serialize The Value
             uint16_t valueSize = kv.second.size();
             buffer.insert(buffer.end(), reinterpret_cast<uint8_t *>(&valueSize), reinterpret_cast<uint8_t *>(&valueSize) + sizeof(uint16_t));
             buffer.insert(buffer.end(), kv.second.begin(), kv.second.end());
         }
 
-        // Pad the buffer with zeros to make it a multiple of the page size
+        // Pad The Buffer With Zeros To Make It A Multiple Of The Page Size
         while (buffer.size() < _flashSize)
             buffer.push_back(0);
 
-        // Write the buffer to Flash memory
+        // Write The Buffer To Flash
         if (!_flashWriteFunc(_flashAddress, buffer.data(), buffer.size()))
             return false;
 
@@ -123,22 +124,27 @@ namespace FlashKV
 
     bool FlashKV::writeKey(std::string key, std::vector<uint8_t> value)
     {
+        // If The Store Hasn't Been Loaded, Return False.
         if (!_storeLoaded)
             return false;
 
+        // Write The Key-Value Pair To The Store.
         _keyValueStore[key] = value;
         return true;
     }
 
     std::optional<std::vector<uint8_t>> FlashKV::readKey(std::string key)
     {
+        // If The Store Hasn't Been Loaded, Return Null.
         if (!_storeLoaded)
             return std::nullopt;
 
+        // Find The Key If It Exists & Return It.
         auto it = _keyValueStore.find(key);
         if (it != _keyValueStore.end())
             return it->second;
 
+        // Return Null If The Key Doesn't Exist.
         return std::nullopt;
     }
 
