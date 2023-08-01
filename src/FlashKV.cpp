@@ -29,7 +29,7 @@ namespace FlashKV
         // Attempt To Read The Signature From Flash
         std::array<uint8_t, FLASHKV_SIGNATURE_SIZE> signature;
         if (!_flashReadFunc(_flashAddress, signature.data(), FLASHKV_SIGNATURE_SIZE))
-            return false;
+            return -1;
 
         // Check If The Signature Is Valid
         if (signature == FLASHKV_SIGNATURE)
