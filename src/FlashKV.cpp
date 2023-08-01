@@ -150,10 +150,21 @@ namespace FlashKV
 
     bool FlashKV::eraseKey(std::string key)
     {
+        // If The Store Hasn't Been Loaded, Return False
         if (!_storeLoaded)
             return false;
 
+        // Erase The Key If It Exists
         return _keyValueStore.erase(key) > 0;
+    }
+
+    std::vector<std::string> FlashKV::getAllKeys()
+    {
+        // Return A Vector Of All The Keys In The Store.
+        std::vector<std::string> keys;
+        for (const auto &kv : _keyValueStore)
+            keys.push_back(kv.first);
+        return keys;
     }
 
 } // namespace FlashKV

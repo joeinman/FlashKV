@@ -8,6 +8,7 @@
 #include <cstring>
 #include <string>
 #include <vector>
+#include <array>
 
 namespace FlashKV
 {
@@ -108,6 +109,13 @@ namespace FlashKV
          */
         bool eraseKey(std::string key);
 
+        /**
+         * @brief Gets all keys in the store.
+         *
+         * @return An std::vector of all keys in the store.
+         */
+        std::vector<std::string> getAllKeys();
+
     private:
         FlashWriteFunc _flashWriteFunc; // Function for writing to Flash memory.
         FlashReadFunc _flashReadFunc;   // Function for reading from Flash memory.
@@ -117,7 +125,7 @@ namespace FlashKV
         size_t _flashPageSize;        // Size of a page in Flash memory.
         size_t _flashSectorSize;      // Size of a sector in Flash memory.
         size_t _flashAddress;         // Address of the Flash memory to use for the key-value store.
-        const size_t _flashSize;      // Size of the Flash memory to use for the key-value store.
+        size_t _flashSize;            // Size of the Flash memory to use for the key-value store.
         bool _storeLoaded;            // Whether the key-value store has been loaded from Flash memory.
     };
 

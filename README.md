@@ -43,9 +43,7 @@ int main()
         },
         [](uint32_t flashAddress, uint8_t *data, size_t count) -> bool
         {
-            uint8_t *flashPtr = (uint8_t *)flashAddress;
-            for (size_t i = 0; i < count; i++)
-                data[i] = flashPtr[i];
+            memcpy(data, reinterpret_cast<uint8_t *>(flashAddress), count);
             return true;
         },
         [](uint32_t flashAddress, size_t count) -> bool
