@@ -58,7 +58,7 @@ namespace FlashKV
         /**
          * @brief Destroys the FlashKV object.
          *
-         * Saves the store, releases any resources and performs necessary cleanup.
+         * Releases any resources and performs necessary cleanup.
          */
         ~FlashKV();
 

@@ -21,7 +21,6 @@ namespace FlashKV
 
     FlashKV::~FlashKV()
     {
-        saveStore();
     }
 
     int FlashKV::loadStore()
