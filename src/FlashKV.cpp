@@ -1,4 +1,5 @@
 #include "FlashKV/FlashKV.h"
+#include <iostream>
 
 namespace FlashKV
 {
@@ -40,11 +41,11 @@ namespace FlashKV
                 // Read The Size Of The Key
                 uint16_t keySize;
                 _flashReadFunc(_flashAddress + offset, reinterpret_cast<uint8_t *>(&keySize), sizeof(uint16_t));
-                offset += sizeof(uint16_t);
 
                 // If The Key Size Is 0, We Have Reached The End Of The Store
                 if (keySize == 0)
                     break;
+                offset += sizeof(uint16_t);
 
                 // Read The Key
                 std::string key;
@@ -66,6 +67,8 @@ namespace FlashKV
                 // Add Key-Value Pair To The Store
                 _keyValueStore[key] = value;
             }
+            _serialisedSize = offset;
+            std::cout << "Serialised Size: " << _serialisedSize << std::endl;
 
             // Load Was Successful
             _storeLoaded = true;
@@ -127,6 +130,11 @@ namespace FlashKV
         if (!_storeLoaded)
             return false;
 
+        // Calcualte If The Key-Value Pair Will Fit In The Store.
+        size_t requiredSize = sizeof(uint16_t) + key.size() + sizeof(uint16_t) + value.size();
+        if (_serialisedSize + requiredSize > _flashSize)
+            return false;
+
         // Write The Key-Value Pair To The Store.
         _keyValueStore[key] = value;
         return true;
@@ -153,8 +161,17 @@ namespace FlashKV
         if (!_storeLoaded)
             return false;
 
-        // Erase The Key If It Exists
-        return _keyValueStore.erase(key) > 0;
+        // Erase The Key If It Exists & Modify The Serialised Size.
+        auto it = _keyValueStore.find(key);
+        if (it != _keyValueStore.end())
+        {
+            _serialisedSize -= sizeof(uint16_t) + key.size() + sizeof(uint16_t) + it->second.size();
+            _keyValueStore.erase(it);
+            return true;
+        }
+
+        // Return False If The Key Doesn't Exist.
+        return false;
     }
 
     std::vector<std::string> FlashKV::getAllKeys()

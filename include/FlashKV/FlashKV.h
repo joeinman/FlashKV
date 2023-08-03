@@ -123,6 +123,7 @@ namespace FlashKV
         size_t _flashSectorSize;      // Size of a sector in Flash memory.
         size_t _flashAddress;         // Address of the Flash memory to use for the key-value store.
         size_t _flashSize;            // Size of the Flash memory to use for the key-value store.
+        size_t _serialisedSize;       // Size of the serialised key-value store.
         bool _storeLoaded;            // Whether the key-value store has been loaded from Flash memory.
     };
 
