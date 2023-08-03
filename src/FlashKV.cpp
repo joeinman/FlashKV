@@ -1,5 +1,4 @@
 #include "FlashKV/FlashKV.h"
-#include <iostream>
 
 namespace FlashKV
 {
@@ -68,7 +67,6 @@ namespace FlashKV
                 _keyValueStore[key] = value;
             }
             _serialisedSize = offset;
-            std::cout << "Serialised Size: " << _serialisedSize << std::endl;
 
             // Load Was Successful
             _storeLoaded = true;
@@ -130,14 +128,15 @@ namespace FlashKV
         if (!_storeLoaded)
             return false;
 
-        // Calcualte If The Key-Value Pair Will Fit In The Store.
-        size_t requiredSize = sizeof(uint16_t) + key.size() + sizeof(uint16_t) + value.size();
-        if (_serialisedSize + requiredSize > _flashSize)
-            return false;
+        // Write The Key-Value Pair To The Store If There Is Enough Space
+        if (_serialisedSize + sizeof(uint16_t) + key.size() + sizeof(uint16_t) + value.size() <= _flashSize)
+        {
+            _keyValueStore[key] = value;
+            _serialisedSize += sizeof(uint16_t) + key.size() + sizeof(uint16_t) + value.size();
+            return true;
+        }
 
-        // Write The Key-Value Pair To The Store.
-        _keyValueStore[key] = value;
-        return true;
+        return false;
     }
 
     std::optional<std::vector<uint8_t>> FlashKV::readKey(std::string key)
@@ -161,7 +160,7 @@ namespace FlashKV
         if (!_storeLoaded)
             return false;
 
-        // Erase The Key If It Exists & Modify The Serialised Size.
+        // Erase The Key If It Exists & Modify The Serialised Size
         auto it = _keyValueStore.find(key);
         if (it != _keyValueStore.end())
         {
@@ -170,7 +169,6 @@ namespace FlashKV
             return true;
         }
 
-        // Return False If The Key Doesn't Exist.
         return false;
     }
 
