@@ -1,5 +1,7 @@
 # FlashKV
 
+![CMake](https://github.com/joeinman/FlashKV/actions/workflows/cmake.yml/badge.svg)
+
 FlashKV is a lightweight, hardware agnostic key-value store for flash memory. It provides an easy-to-use interface for storing, reading, and erasing key-value pairs in flash memory.
 
 ## Features:
