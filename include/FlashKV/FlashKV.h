@@ -94,9 +94,11 @@ namespace FlashKV
         /**
          * @brief Loads the key-value map from Flash memory.
          *
-         * @return True If A Map was successfully loaded from Flash memory, false otherwise.
+         * @return 0 If an error occurred while loading the map.
+         * @return 1 If a map was successfully loaded from flash memory.
+         * @return 2 If no map was found in flash memory.
          */
-        bool loadMap();
+        uint8_t loadMap();
 
         /**
          * @brief Saves the key-value map to Flash memory.
@@ -149,12 +151,12 @@ namespace FlashKV
         std::optional<std::pair<size_t, KeyValue>> deserialiseKeyValuePair(size_t offset);                     // Deserialises A Key-Value Pair.
         bool verifySignature();                                                                                // Verifies The FlashKV Signature.
 
-        KeyValueMap keyValueMap; // In-memory key-value map.
-        size_t flashPageSize;    // Size of a page in Flash memory.
-        size_t flashSectorSize;  // Size of a sector in Flash memory.
-        size_t flashAddress;     // Address of the Flash memory to use for the key-value map.
-        size_t flashSize;        // Size of the Flash memory to use for the key-value map.
-        size_t serialisedSize;   // Size of the serialised key-value map.
+        KeyValueMap keyValueMap;                        // In-memory key-value map.
+        size_t flashPageSize;                           // Size of a page in Flash memory.
+        size_t flashSectorSize;                         // Size of a sector in Flash memory.
+        size_t flashAddress;                            // Address of the Flash memory to use for the key-value map.
+        size_t flashSize;                               // Size of the Flash memory to use for the key-value map.
+        size_t serialisedSize = FLASHKV_SIGNATURE_SIZE; // Size of the serialised key-value map.
     };
 
 } // namespace FlashKV

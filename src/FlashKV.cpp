@@ -52,27 +52,48 @@ namespace FlashKV
 
     FlashKV::~FlashKV() {}
 
-    bool FlashKV::loadMap()
+    // int FlashKV::loadMap()
+    // {
+    //     if (verifySignature())
+    //     {
+    //         serialisedSize = FLASHKV_SIGNATURE_SIZE;
+    //         while (serialisedSize < flashSize)
+    //         {
+    //             auto deserializedPair = deserialiseKeyValuePair(serialisedSize);
+
+    //             if (!deserializedPair.has_value())
+    //                 return 0;
+
+    //             if (deserializedPair->first == 0)
+    //                 return 1;
+
+    //             keyValueMap[deserializedPair->second.first] = deserializedPair->second.second;
+    //             serialisedSize += deserializedPair->first;
+    //         }
+    //     }
+
+    //     return false;
+    // }
+
+    uint8_t FlashKV::loadMap()
     {
         if (verifySignature())
         {
-            serialisedSize = FLASHKV_SIGNATURE_SIZE;
             while (serialisedSize < flashSize)
             {
                 auto deserializedPair = deserialiseKeyValuePair(serialisedSize);
 
-                if (!deserializedPair.has_value())
-                    return false;
+                if (!deserializedPair)
+                    return 0;
 
                 if (deserializedPair->first == 0)
-                    return true;
+                    return 1;
 
                 keyValueMap[deserializedPair->second.first] = deserializedPair->second.second;
                 serialisedSize += deserializedPair->first;
             }
         }
-
-        return false;
+        return 2;
     }
 
     bool FlashKV::saveMap()
