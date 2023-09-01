@@ -30,6 +30,9 @@
 
 namespace FlashKV
 {
+
+    // ----------------------------------------    F L A S H    K V    C L A S S    ---------------------------------------- //
+
     FlashKV::FlashKV(FlashWriteFunction flashWriteFunction,
                      FlashReadFunction flashReadFunc,
                      FlashEraseFunction flashEraseFunction,
@@ -137,6 +140,10 @@ namespace FlashKV
         return keys;
     }
 
+    // --------------------------------------------------------------------------------------------------------------------- //
+
+    // --------------------------------------    H E L P E R    F U N C T I O N S    --------------------------------------- //
+
     bool FlashKV::verifySignature()
     {
         uint8_t signature[FLASHKV_SIGNATURE_SIZE];
@@ -194,5 +201,7 @@ namespace FlashKV
         offset += valueSize;
         return std::make_pair(offset - initialOffset, KeyValue{key, value});
     }
+
+    // --------------------------------------------------------------------------------------------------------------------- //
 
 } // namespace FlashKV
