@@ -30,138 +30,109 @@
 
 namespace FlashKV
 {
-    FlashKV::FlashKV(FlashWriteFunction flashWriteFunc,
+    FlashKV::FlashKV(FlashWriteFunction flashWriteFunction,
                      FlashReadFunction flashReadFunc,
-                     FlashEraseFunction flashEraseFunc,
+                     FlashEraseFunction flashEraseFunction,
                      size_t flashPageSize,
                      size_t flashSectorSize,
                      size_t flashAddress,
                      size_t flashSize)
-        : _flashWriteFunc(flashWriteFunc),
-          _flashReadFunc(flashReadFunc),
-          _flashEraseFunc(flashEraseFunc),
-          _flashPageSize(flashPageSize),
-          _flashSectorSize(flashSectorSize),
-          _flashAddress(flashAddress),
-          _flashSize(flashSize)
+        : flashWriteFunction(flashWriteFunction),
+          flashReadFunction(flashReadFunc),
+          flashEraseFunction(flashEraseFunction),
+          flashPageSize(flashPageSize),
+          flashSectorSize(flashSectorSize),
+          flashAddress(flashAddress),
+          flashSize(flashSize)
     {
     }
 
-    FlashKV::~FlashKV()
-    {
-    }
+    FlashKV::~FlashKV() {}
 
     int FlashKV::loadMap()
     {
-        // Attempt To Read The Signature From Flash
-        uint8_t signature[FLASHKV_SIGNATURE_SIZE];
-        if (!_flashReadFunc(_flashAddress, signature, FLASHKV_SIGNATURE_SIZE))
-            return -1;
-
-        // Check If The Signature Is Valid
-        if (std::memcmp(signature, FLASHKV_SIGNATURE, FLASHKV_SIGNATURE_SIZE) == 0)
+        if (verifySignature())
         {
-            // Flash Contains A Valid FlashKV Map.
-            size_t offset = FLASHKV_SIGNATURE_SIZE;
+            serialisedSize = FLASHKV_SIGNATURE_SIZE;
             while (1)
             {
                 // Read The Size Of The Key
                 uint16_t keySize;
-                _flashReadFunc(_flashAddress + offset, reinterpret_cast<uint8_t *>(&keySize), sizeof(uint16_t));
+                flashReadFunction(flashAddress + serialisedSize, reinterpret_cast<uint8_t *>(&keySize), sizeof(uint16_t));
 
                 // If The Key Size Is 0, We Have Reached The End Of The Map
                 if (keySize == 0)
                     break;
-                offset += sizeof(uint16_t);
+                serialisedSize += sizeof(uint16_t);
 
                 // Read The Key
                 std::string key;
                 key.resize(keySize);
-                _flashReadFunc(_flashAddress + offset, reinterpret_cast<uint8_t *>(&key[0]), keySize);
-                offset += keySize;
+                flashReadFunction(flashAddress + serialisedSize, reinterpret_cast<uint8_t *>(&key[0]), keySize);
+                serialisedSize += keySize;
 
                 // Read The Size Of The Value
                 uint16_t valueSize;
-                _flashReadFunc(_flashAddress + offset, reinterpret_cast<uint8_t *>(&valueSize), sizeof(uint16_t));
-                offset += sizeof(uint16_t);
+                flashReadFunction(flashAddress + serialisedSize, reinterpret_cast<uint8_t *>(&valueSize), sizeof(uint16_t));
+                serialisedSize += sizeof(uint16_t);
 
                 // Read The Value
                 std::vector<uint8_t> value;
                 value.resize(valueSize);
-                _flashReadFunc(_flashAddress + offset, reinterpret_cast<uint8_t *>(&value[0]), valueSize);
-                offset += valueSize;
+                flashReadFunction(flashAddress + serialisedSize, reinterpret_cast<uint8_t *>(&value[0]), valueSize);
+                serialisedSize += valueSize;
 
                 // Add Key-Value Pair To The Map
-                _keyValueMap[key] = value;
+                keyValueMap[key] = value;
             }
-            _serialisedSize = offset;
 
             // Load Was Successful
-            _mapLoaded = true;
+            mapLoaded = true;
             return 0;
         }
         else
         {
             // Flash Doesn't Contain A Valid FlashKV Map
-            _mapLoaded = true;
+            mapLoaded = true;
             return 1;
         }
+        
         return -1;
     }
 
     bool FlashKV::saveMap()
     {
-        // If The Map Hasn't Been Loaded, Return False.
-        if (!_mapLoaded)
-            return false;
-
-        // Erase Entire Flash Memory.
-        if (!_flashEraseFunc(_flashAddress, _flashSize))
-            return false;
-
-        // Create A Buffer To Hold The Entire Map
-        std::vector<uint8_t> buffer;
-
-        // Add Signature To The Buffer
-        buffer.insert(buffer.end(), std::begin(FLASHKV_SIGNATURE), std::end(FLASHKV_SIGNATURE));
-
-        // Add Each Key-Value Pair To The Buffer
-        for (const auto &kv : _keyValueMap)
+        if (mapLoaded && flashEraseFunction(flashAddress, flashSize))
         {
-            // Serialize The Key
-            uint16_t keySize = kv.first.size();
-            buffer.insert(buffer.end(), reinterpret_cast<uint8_t *>(&keySize), reinterpret_cast<uint8_t *>(&keySize) + sizeof(uint16_t));
-            buffer.insert(buffer.end(), kv.first.begin(), kv.first.end());
+            std::vector<uint8_t> buffer;
+            buffer.reserve(serialisedSize);
+            buffer.insert(buffer.end(), std::begin(FLASHKV_SIGNATURE), std::end(FLASHKV_SIGNATURE));
 
-            // Serialize The Value
-            uint16_t valueSize = kv.second.size();
-            buffer.insert(buffer.end(), reinterpret_cast<uint8_t *>(&valueSize), reinterpret_cast<uint8_t *>(&valueSize) + sizeof(uint16_t));
-            buffer.insert(buffer.end(), kv.second.begin(), kv.second.end());
+            for (const auto &[key, value] : keyValueMap)
+            {
+                auto kvBytes = serialiseKeyValuePair(key, value);
+                buffer.insert(buffer.end(), kvBytes.begin(), kvBytes.end());
+            }
+
+            while (buffer.size() % flashPageSize != 0)
+                buffer.push_back(0);
+
+            return flashWriteFunction(flashAddress, buffer.data(), buffer.size());
         }
 
-        // Pad The Buffer With Zeros To Make It A Multiple Of The Page Size
-        while (buffer.size() < _flashSize)
-            buffer.push_back(0);
-
-        // Write The Buffer To Flash
-        if (!_flashWriteFunc(_flashAddress, buffer.data(), buffer.size()))
-            return false;
-
-        return true;
+        return false;
     }
 
     bool FlashKV::writeKey(std::string key, std::vector<uint8_t> value)
     {
-        // If The Map Hasn't Been Loaded, Return False.
-        if (!_mapLoaded)
-            return false;
-
-        // Write The Key-Value Pair To The Map If There Is Enough Space
-        if (_serialisedSize + sizeof(uint16_t) + key.size() + sizeof(uint16_t) + value.size() <= _flashSize)
+        if (mapLoaded)
         {
-            _keyValueMap[key] = value;
-            _serialisedSize += sizeof(uint16_t) + key.size() + sizeof(uint16_t) + value.size();
-            return true;
+            if (serialisedSize + sizeof(uint16_t) + key.size() + sizeof(uint16_t) + value.size() <= flashSize)
+            {
+                keyValueMap[key] = value;
+                serialisedSize += sizeof(uint16_t) + key.size() + sizeof(uint16_t) + value.size();
+                return true;
+            }
         }
 
         return false;
@@ -169,32 +140,27 @@ namespace FlashKV
 
     std::optional<std::vector<uint8_t>> FlashKV::readKey(std::string key)
     {
-        // If The Map Hasn't Been Loaded, Return Null.
-        if (!_mapLoaded)
-            return std::nullopt;
+        if (mapLoaded)
+        {
+            auto it = keyValueMap.find(key);
+            if (it != keyValueMap.end())
+                return it->second;
+        }
 
-        // Find The Key If It Exists & Return It.
-        auto it = _keyValueMap.find(key);
-        if (it != _keyValueMap.end())
-            return it->second;
-
-        // Return Null If The Key Doesn't Exist.
         return std::nullopt;
     }
 
     bool FlashKV::eraseKey(std::string key)
     {
-        // If The Map Hasn't Been Loaded, Return False
-        if (!_mapLoaded)
-            return false;
-
-        // Erase The Key If It Exists & Modify The Serialised Size
-        auto it = _keyValueMap.find(key);
-        if (it != _keyValueMap.end())
+        if (mapLoaded)
         {
-            _serialisedSize -= sizeof(uint16_t) + key.size() + sizeof(uint16_t) + it->second.size();
-            _keyValueMap.erase(it);
-            return true;
+            auto it = keyValueMap.find(key);
+            if (it != keyValueMap.end())
+            {
+                serialisedSize -= sizeof(uint16_t) + key.size() + sizeof(uint16_t) + it->second.size();
+                keyValueMap.erase(it);
+                return true;
+            }
         }
 
         return false;
@@ -202,11 +168,34 @@ namespace FlashKV
 
     std::vector<std::string> FlashKV::getAllKeys()
     {
-        // Return A Vector Of All The Keys In The Map.
         std::vector<std::string> keys;
-        for (const auto &[key, value] : _keyValueMap)
+        for (const auto &[key, value] : keyValueMap)
             keys.push_back(key);
         return keys;
+    }
+
+    bool FlashKV::verifySignature()
+    {
+        uint8_t signature[FLASHKV_SIGNATURE_SIZE];
+        if (!flashReadFunction(flashAddress, signature, FLASHKV_SIGNATURE_SIZE))
+            return false;
+
+        return std::memcmp(signature, FLASHKV_SIGNATURE, FLASHKV_SIGNATURE_SIZE) == 0;
+    }
+
+    std::vector<uint8_t> FlashKV::serialiseKeyValuePair(const std::string &key, const std::vector<uint8_t> &value)
+    {
+        std::vector<uint8_t> buffer;
+        uint16_t keySize = key.size();
+        uint16_t valueSize = value.size();
+
+        buffer.insert(buffer.end(), reinterpret_cast<uint8_t *>(&keySize), reinterpret_cast<uint8_t *>(&keySize) + sizeof(uint16_t));
+        buffer.insert(buffer.end(), key.begin(), key.end());
+
+        buffer.insert(buffer.end(), reinterpret_cast<uint8_t *>(&valueSize), reinterpret_cast<uint8_t *>(&valueSize) + sizeof(uint16_t));
+        buffer.insert(buffer.end(), value.begin(), value.end());
+
+        return buffer;
     }
 
 } // namespace FlashKV

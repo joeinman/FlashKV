@@ -47,7 +47,8 @@ namespace FlashKV
     using FlashEraseFunction = std::function<bool(uint32_t flashAddress, size_t count)>;
 
     // Key-Value Map Type
-    using KeyValueMap = std::unordered_map<std::string, std::vector<uint8_t>>;
+    using KeyValue = std::pair<std::string, std::vector<uint8_t>>;
+    using KeyValueMap = std::unordered_map<KeyValue::first_type, KeyValue::second_type>;
 
     /**
      * @class FlashKV
@@ -142,17 +143,20 @@ namespace FlashKV
         std::vector<std::string> getAllKeys();
 
     private:
-        FlashWriteFunction _flashWriteFunc; // Function for writing to Flash memory.
-        FlashReadFunction _flashReadFunc;   // Function for reading from Flash memory.
-        FlashEraseFunction _flashEraseFunc; // Function for erasing from Flash memory.
+        FlashWriteFunction flashWriteFunction; // Function for writing to Flash memory.
+        FlashReadFunction flashReadFunction;   // Function for reading from Flash memory.
+        FlashEraseFunction flashEraseFunction; // Function for erasing from Flash memory.
 
-        KeyValueMap _keyValueMap; // In-memory key-value map.
-        size_t _flashPageSize;    // Size of a page in Flash memory.
-        size_t _flashSectorSize;  // Size of a sector in Flash memory.
-        size_t _flashAddress;     // Address of the Flash memory to use for the key-value map.
-        size_t _flashSize;        // Size of the Flash memory to use for the key-value map.
-        size_t _serialisedSize;   // Size of the serialised key-value map.
-        bool _mapLoaded;          // Whether the key-value map has been loaded from Flash memory.
+        bool verifySignature();                                                                                // Verifies The FlashKV Signature.
+        std::vector<uint8_t> serialiseKeyValuePair(const std::string &key, const std::vector<uint8_t> &value); // Serialises A Key-Value Pair.
+
+        KeyValueMap keyValueMap;   // In-memory key-value map.
+        size_t flashPageSize;      // Size of a page in Flash memory.
+        size_t flashSectorSize;    // Size of a sector in Flash memory.
+        size_t flashAddress;       // Address of the Flash memory to use for the key-value map.
+        size_t flashSize;          // Size of the Flash memory to use for the key-value map.
+        size_t serialisedSize = 0; // Size of the serialised key-value map.
+        bool mapLoaded;            // Whether the key-value map has been loaded from Flash memory.
     };
 
 } // namespace FlashKV
