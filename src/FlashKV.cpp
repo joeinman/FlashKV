@@ -1,29 +1,29 @@
 /*
  * FlashKV - A Lightweight, Hardware-Agnostic Key-Value Map for Flash Memory
- * 
+ *
  * Copyright (C) 2023 Joe Inman
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the MIT License as published by
  * the Open Source Initiative.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * MIT License for more details.
- * 
+ *
  * You should have received a copy of the MIT License along with this program.
  * If not, see <https://opensource.org/licenses/MIT>.
- * 
+ *
  * Author: Joe Inman
  * Email: joe.inman8@gmail.com
  * Version: 1.0
- * 
+ *
  * Description:
  * FlashKV is designed to provide a straightforward and customizable
  * interface for key-value storage in flash memory. This library
  * allows for easy reading, writing, and erasing of key-value pairs.
- * 
+ *
  */
 
 #include "../include/FlashKV/FlashKV.h"
@@ -204,8 +204,8 @@ namespace FlashKV
     {
         // Return A Vector Of All The Keys In The Map.
         std::vector<std::string> keys;
-        for (const auto &kv : _keyValueMap)
-            keys.push_back(kv.first);
+        for (const auto &[key, value] : _keyValueMap)
+            keys.push_back(key);
         return keys;
     }
 

@@ -1,29 +1,29 @@
 /*
  * FlashKV - A Lightweight, Hardware-Agnostic Key-Value Map for Flash Memory
- * 
+ *
  * Copyright (C) 2023 Joe Inman
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the MIT License as published by
  * the Open Source Initiative.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * MIT License for more details.
- * 
+ *
  * You should have received a copy of the MIT License along with this program.
  * If not, see <https://opensource.org/licenses/MIT>.
- * 
+ *
  * Author: Joe Inman
  * Email: joe.inman8@gmail.com
  * Version: 1.0
- * 
+ *
  * Description:
  * FlashKV is designed to provide a straightforward and customizable
  * interface for key-value storage in flash memory. This library
  * allows for easy reading, writing, and erasing of key-value pairs.
- * 
+ *
  */
 
 #pragma once
@@ -43,7 +43,7 @@ namespace FlashKV
 
     // Function Types For Flash Access
     using FlashWriteFunction = std::function<bool(uint32_t flashAddress, const uint8_t *data, size_t count)>;
-    using FlashReadFunction  = std::function<bool(uint32_t flashAddress, uint8_t *data, size_t count)>;
+    using FlashReadFunction = std::function<bool(uint32_t flashAddress, uint8_t *data, size_t count)>;
     using FlashEraseFunction = std::function<bool(uint32_t flashAddress, size_t count)>;
 
     // Key-Value Map Type
@@ -146,13 +146,13 @@ namespace FlashKV
         FlashReadFunction _flashReadFunc;   // Function for reading from Flash memory.
         FlashEraseFunction _flashEraseFunc; // Function for erasing from Flash memory.
 
-        KeyValueMap _keyValueMap;           // In-memory key-value map.
-        size_t _flashPageSize;              // Size of a page in Flash memory.
-        size_t _flashSectorSize;            // Size of a sector in Flash memory.
-        size_t _flashAddress;               // Address of the Flash memory to use for the key-value map.
-        size_t _flashSize;                  // Size of the Flash memory to use for the key-value map.
-        size_t _serialisedSize;             // Size of the serialised key-value map.
-        bool _mapLoaded;                    // Whether the key-value map has been loaded from Flash memory.
+        KeyValueMap _keyValueMap; // In-memory key-value map.
+        size_t _flashPageSize;    // Size of a page in Flash memory.
+        size_t _flashSectorSize;  // Size of a sector in Flash memory.
+        size_t _flashAddress;     // Address of the Flash memory to use for the key-value map.
+        size_t _flashSize;        // Size of the Flash memory to use for the key-value map.
+        size_t _serialisedSize;   // Size of the serialised key-value map.
+        bool _mapLoaded;          // Whether the key-value map has been loaded from Flash memory.
     };
 
 } // namespace FlashKV
